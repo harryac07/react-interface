@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import data from '../public/javascripts/data.js'
 import AptList from './AptList'
 import AddAppointment from './AddAppointment'
+import SearchAppointments from './SearchAppointments'
 import _ from 'lodash'
 // import axios from 'axios';
 
@@ -11,11 +12,16 @@ class App extends Component {
         super(props);
         this.state = {
             myAppointments: [],
-            aptBodyVisible : false
+            aptBodyVisible : false,
+            orderBy :'petName',
+            orderDir: 'asc',
+            queryText : ''
         };
         this.deleteMessage=this.deleteMessage.bind(this);
         this.toggleAddDisplay = this.toggleAddDisplay.bind(this);
         this.addItem = this.addItem.bind(this);
+        this.reOrder=this.reOrder.bind(this);
+        this.searchApts = this.searchApts.bind(this);
     }
 
     componentWillMount() {
@@ -51,11 +57,45 @@ class App extends Component {
         // tempApts.push(tempItem);
         this.setState({
             myAppointments :[...tempApts,tempItem]
-        })
+        });
     }//addItem
 
+    reOrder(orderBy,orderDir) {
+        this.setState({
+            orderBy:orderBy,
+            orderDir:orderDir
+        });
+    }//reOrder
+
+    searchApts(query) {
+        this.setState({
+            queryText:query
+        });
+    }//searchApts
+
     render() {
-        var filteredApts=this.state.myAppointments.map(function(item,i){
+        var orderBy = this.state.orderBy;
+        var orderDir = this.state.orderDir;
+        var queryText = this.state.queryText;
+        var filteredApts=[];
+        var myAppointments = this.state.myAppointments;
+
+        myAppointments.forEach(function(item){
+            if(
+                (item.petName.toLowerCase().indexOf(queryText) !==-1) ||
+                (item.ownerName.toLowerCase().indexOf(queryText) !==-1) ||
+                (item.aptDate.toLowerCase().indexOf(queryText) !==-1) ||
+                (item.aptNotes.toLowerCase().indexOf(queryText) !==-1) 
+            ){
+                filteredApts.push(item);
+            }
+        });
+
+        filteredApts = _.orderBy(filteredApts,function(item){ // use lodash to filter
+            return item[orderBy].toLowerCase();
+        },orderDir); // orderBy
+
+        filteredApts=filteredApts.map(function(item,i){
             return(
                 <AptList key={i} singleItem={item} whichItem={item} onDelete={this.deleteMessage}/>
             );
@@ -63,6 +103,7 @@ class App extends Component {
         return (
             <div className="interface">
                 <AddAppointment bodyVisible={this.state.aptBodyVisible} handleToggle={this.toggleAddDisplay} addApt={this.addItem} />
+                <SearchAppointments orderBy={this.state.orderBy} orderDir={this.state.orderDir} onReOrder={this.reOrder} onSearch={this.searchApts}/>
                 <ul className="item-list media-list">
                     {filteredApts}
                 </ul>
